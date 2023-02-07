@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/14/文件夹</title>
+    <defs>
+        <linearGradient x1="8.78178098%" y1="44.4040916%" x2="94.7060085%" y2="58.4318669%" id="linearGradient-1">
+            <stop stop-color="#7DA7FF" offset="0%"></stop>
+            <stop stop-color="#3E55FD" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="15.9879365%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#5B75EB" offset="0%"></stop>
+            <stop stop-color="#1E2FA4" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="60.8670228%" x2="0%" y2="47.0663014%" id="linearGradient-3">
+            <stop stop-color="#E48B2A" offset="0%"></stop>
+            <stop stop-color="#F8CF7D" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="icon/14/文件夹" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <rect id="矩形" fill-opacity="0" fill="#FFFFFF" x="0" y="0" width="14" height="14"></rect>
+        <g id="drawer-01" transform="translate(0.000000, 3.500000)" fill-rule="nonzero">
+            <path d="M9.1875,3.5 C9.1875,4.708125 8.208125,5.6875 7,5.6875 C5.791875,5.6875 4.8125,4.708125 4.8125,3.5 L0,3.5 L0,8.75 C0,9.23328125 0.39171875,9.625 0.875,9.625 L13.125,9.625 C13.6082812,9.625 14,9.23328125 14,8.75 L14,3.5 L9.1875,3.5 Z" id="路径" fill="url(#linearGradient-1)"></path>
+            <path d="M9.1875,3.5 C9.1875,4.708125 8.208125,5.6875 7,5.6875 C5.791875,5.6875 4.8125,4.708125 4.8125,3.5 L0,3.5 L2.49375,0.175 C2.57638997,0.0648543344 2.70604948,0 2.84375,0 L11.15625,0 C11.2939062,0 11.4235938,0.06484375 11.50625,0.175 L14,3.5 L9.1875,3.5 Z" id="路径" fill="url(#linearGradient-2)"></path>
+        </g>
+        <path d="M4.81021152,1 L9.28978848,1 C9.56593085,1 9.78978848,1.22385763 9.78978848,1.5 C9.78978848,1.60957162 9.75379557,1.71610959 9.68734448,1.80323131 L7.447556,4.73973994 C7.28008597,4.95930406 6.96633281,5.00153466 6.74676869,4.83406463 C6.71125527,4.80697718 6.67953145,4.77525336 6.652444,4.73973994 L4.41265552,1.80323131 C4.24518549,1.58366719 4.2874161,1.26991403 4.50698022,1.102444 C4.59410193,1.0359929 4.7006399,1 4.81021152,1 Z" id="路径-3" fill="url(#linearGradient-3)"></path>
+    </g>
+</svg>
