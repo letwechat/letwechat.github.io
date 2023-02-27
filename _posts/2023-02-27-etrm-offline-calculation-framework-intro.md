@@ -1,16 +1,21 @@
+---
+title: 交易反欺诈离线计算的工程化
+tags: 系统设计 交易反欺诈 离线计算
+---
+
 # 交易反欺诈离线计算的工程化
 
 # 概述
 
 离线特征计算，顾名思义，就是用SQL的方式用跑批量的形式来提取用户特征数据，因为属于离线所以这些特征的实时性要求就没有那么高，一般能达到T+1就可以了。在交易反欺诈系统中，离线特征无论是数量，还是在特征中的占比都相对来说比较大，而且跑批的时间也比较长，一般从凌晨2:30开始，大概要执行3.5个小时，涉及到将近10个任务：
 
-![Untitled](./2023-02-27/Untitled.png)
+![Untitled](/assets/images/blogs/20230227/Untitled.png)
 
 对于离线SQL计算出来的结果，都需要输出至特征存储（Redis集群）中，输出过程大同小异，但存在很多共同的代码，如果将其泛化，抽象出本质，建立高内聚的代码结构。
 
 既然是跑SQL，同样也是基于数据表的，只不是表数据不是在关系型数据库而是在大数据环境中，为提升整体跑批性能，会在前后做一些特定的优化，交易反欺诈系统中的离线分析步骤简单概述如下：
 
-![Untitled](./2023-02-27/Untitled%201.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%201.png)
 
 1. 大数据离线分析时在Spark环境上运行，需要建立SparkSession会话，将对应分布式文件系统数据（HDFS）依据相关的格式（Parquet列存储、CSV行存储），建立DataSet以备后续分析；
 2. 对文件系统中的数据，可能存在冗余（无效列，错误干扰数据），进行多行数据合并（交易+回传数据合并）单表预处理；
@@ -20,7 +25,7 @@
 
 工程角度的基本类图如下，后续章节将会分步骤描述过程：
 
-![Untitled](./2023-02-27/Untitled%202.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%202.png)
 
 # 1. 离线分析数据准备
 
@@ -39,7 +44,7 @@ doCreateMergedTempTable(sparkSession);
 
 对于Parquet列式存储的临时表创建实现HdfsDatasetTableCreator，其概要过程如下：
 
-![Untitled](./2023-02-27/Untitled%203.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%203.png)
 
 .parquet()方法指明其读取的数据文件为parquet列式存储文件，其参数为分布式文件系统HDFS路径，读取后的Dataset<Row>对象就可以用createOrReplaceView()来创建临时表了，需要注意的是该临时表仅在该Session中有效，当任务执行完成或异常结束时就不存在了，不同的Session使用相同名称的临时表也是可行的，临时表在Session之间是非共享且不可见的。
 
@@ -65,7 +70,7 @@ doCreateMergedTempTable(sparkSession);
 
 如果是简单的去除不必要的列，或是可通过SQL表示出来的操作，可以直接基于Dataset<Row>对象来进行处理，如下面代码只选取部分被用到的字段列表：
 
-![Untitled](./2023-02-27/Untitled%204.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%204.png)
 
 但当逻辑复杂到已经不能用SQL表示了，例如合并后根据时间顺序找出最终状态，并去除某些干扰数据和时间顺序上不可能出现的逻辑，就需要借助更为复杂的API编程了。
 
@@ -75,7 +80,7 @@ SQL的语义毕竟表达能力有限，如果业务逻辑稍微复杂，就得�
 
 在某业务场景中，就根据渠道特定的业务逻辑合并数据，并将其转换回Dataset，这样一来需要特殊处理的SQL被省去了，无论是性能上，还是SQL可读性和结果准确性上都有着极大的提升。
 
-![Untitled](./2023-02-27/Untitled%205.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%205.png)
 
 ## 1.3 多数据表合并
 
@@ -83,7 +88,7 @@ SQL的语义毕竟表达能力有限，如果业务逻辑稍微复杂，就得�
 
 与单表合并类似，多数据表合并也可根据复杂程度的不同，选择SQL或RDD两种方式处理。
 
-![Untitled](./2023-02-27/Untitled%206.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%206.png)
 
 # 2. 执行SQL并输出
 
@@ -131,7 +136,7 @@ protected void writeHandler(Iterator<Row> rows, JedisClusterPipeline jcp){
 
 假如能够将SQL中的field和具体操作对应起来，将会极大加速研发过程，最终达到下面的目标：
 
-![Untitled](./2023-02-27/Untitled%207.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%207.png)
 
 在executeSql中选出的字段，每条数据分别进行 Del，Sadd, Expire 操作，比如Del，就会删除“前缀+ payee_acno字段值”的key，这样就容易理解了。
 
@@ -200,7 +205,7 @@ protected String convertedVariable(ImportVariable importVariable, Row variables)
 
 例如我们要对SQL跑取的客户号cif_no某个特征进行先Del再Hset并设置Expire，那么Del，HSet，Expire就属于叠加操作，且它们之间除了执行顺序，无耦合关系，使用继承的方式设计抽象类型AbstractPatternBasedRowOperation，并组合ImportVariable，来实现单个操作，下面举例说明。
 
-![Untitled](./2023-02-27/Untitled%208.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%208.png)
 
 参考Redis的Del实现，在构造时根据传入的key进行编译，运行时先根据编译结果生成要生成的key值，使用Pipeline执行del：
 
@@ -250,25 +255,25 @@ public void doRedisOperation(Row row, RedisExecContext redisExecContext) {
 
 举个例子，String类型的SDS占用内存较大，我们在做Redis内存存储的空间优化经常要将其合并到Hash数据结构中，但由于使用JedisCluster集群结构，为避免压力都集中到单个Slot，还需要将Key值哈希分片化，引入类似下面的函数来对key进行处理：
 
-![Untitled](./2023-02-27/Untitled%209.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%209.png)
 
 如果从抽象的角度来看，row.getAs可以视为一种特殊取值操作，${} 可以看做是直接取值函数，既然可以取值，也能在Row.getAs外围做一些特定的函数调用，获取变量的正则表达式演进成 $函数名(变量)，为兼容原有应用，将 ImportVariable 从Java类演进成接口，只暴露 convertVariableToString(Row row)方法，构建过程中不仅记录变量，还需要记录函数，在类型中引入内部静态类型：FuncVarTuple（func, var）
 
-![Untitled](./2023-02-27/Untitled%2010.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2010.png)
 
 当然，函数不能是随意写的，需要实现注册，为满足兼容条件，空字符串仍然被认为是直接获取Row；而上面提到的 RedisShareUtil.getSharedRedisKey 方法被注册进来，在最终实现的 convertVariableToString(Row)方法中，需要对自定义函数进行调用，同时能够兼容原有 Row.getValue()：
 
-![Untitled](./2023-02-27/Untitled%2011.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2011.png)
 
 在离线特征的定义中，以下面这种方式使用 splitkey函数：
 
-![Untitled](./2023-02-27/Untitled%2012.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2012.png)
 
 ## 2.4 考虑其他存储介质
 
 除了写出至Redis存储介质，还有部分离线特征在计算完成后，连带去触发相关实时特征计算，这就需要往它们之间的纽带：Kafka消息队列中发送实时消息，去触发在Flink中部署的实时特征计算模块，因此最上面的IRowOperation接口还支持Kafka类型的实现，由于这种属于特殊情况，仍采用从Row对象中直接取值的方式来实现：
 
-![Untitled](./2023-02-27/Untitled%2013.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2013.png)
 
 但是发送Kafka存在一个问题，由于我们使用了Redis的Pipeline流水线技术，Pipeline为了提升Redis操作性能，会积累一定的命令后（当前设置=500）批量提交，这就导致了部分Kafka消息被Flink实时任务消费处理了，但Redis集群中并不存在任务的尴尬情况，因此还需要使用观察者模式将Pipeline的sync周期管理起来，特别定了3个接口：
 
@@ -276,7 +281,7 @@ public void doRedisOperation(Row row, RedisExecContext redisExecContext) {
 - finish()：SQL执行结束，注销观察者；
 - doCallback()：Pipeline.sync()执行完成，累积在内存中的ProducerRecord统一发送，当然，这可能会导致一些问题，比如executor程序崩溃导致堆积的消息并没有完全被释放，但同时Pipeline也会丢失未同步的数据，好在大数据集群能够保证总是能够执行成功一次，只要保证后置任务的幂等性数据正确性就不会出问题。
 
-![Untitled](./2023-02-27/Untitled%2014.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2014.png)
 
 # 3. 离线特征文档化
 
@@ -292,7 +297,7 @@ public void doRedisOperation(Row row, RedisExecContext redisExecContext) {
 
 可以看出这三类接口之间是包含的关系，如果我们要将其文档化，可参考设计模式中的 Composite模式（组合模式），借助每个接口重写的 toString()方法，导出对应文档。
 
-![Untitled](./2023-02-27/Untitled%2015.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2015.png)
 
 举例说明，由于我们导出的文档是自动更新到wiki中的，类似MarkDown的格式，代码类似如下：
 
@@ -320,7 +325,7 @@ public String toString() {
 
 最终导出的文档格式如下，能够完整反映出离线特征的特性：
 
-![Untitled](./2023-02-27/Untitled%2016.png)
+![Untitled](/assets/images/blogs/20230227/Untitled%2016.png)
 
 # 4.总结
 
